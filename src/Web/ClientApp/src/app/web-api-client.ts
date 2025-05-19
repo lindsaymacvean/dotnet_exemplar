@@ -138,7 +138,7 @@ export class TodoItemsClient implements ITodoItemsClient {
             let result201: any = null;
             let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result201 = resultData201 !== undefined ? resultData201 : <any>null;
-
+    
             return _observableOf(result201);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -417,7 +417,7 @@ export class TodoListsClient implements ITodoListsClient {
             let result201: any = null;
             let resultData201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
                 result201 = resultData201 !== undefined ? resultData201 : <any>null;
-
+    
             return _observableOf(result201);
             }));
         } else if (status !== 200 && status !== 204) {

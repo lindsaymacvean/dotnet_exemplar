@@ -40,7 +40,7 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrong\!Passw0rd" -p 143
 docker ps
 ```
 
-4. The connection string in `appsettings.Development.json` is already configured to use this SQL Server instance.
+4. The connection string in `appsettings.Development.json` is already configured to use this SQL Server instance. If you want to query manually then try [DBeaver](https://dbeaver.io/download/)
 
 5. To stop the container when you're done:
 ```bash
@@ -58,6 +58,8 @@ To run the web application:
 ```bash
 dotnet watch --project src/Web run
 ```
+Login with administrator@localhost:Administrator1!
+(Obviously reset this after initial deploy to production)
 
 Navigate to https://localhost:5001. The application will automatically reload if you change any of the source files.
 
