@@ -7,10 +7,8 @@ const PROXY_CONFIG = [
   {
     context: [
       "/api",
-      "/Identity",
-      "/weatherforecast",
-      "/WeatherForecast"
-   ],
+      "/Identity"
+    ],
     proxyTimeout: 10000,
     target: target,
     secure: false,

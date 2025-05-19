@@ -21,12 +21,6 @@ Input.Email={{Email}}&Input.Password={{Password}}&__RequestVerificationToken={{R
 
 ###
 
-# GET WeatherForecast
-GET {{Web_HostAddress}}/api/WeatherForecasts
-Cookie: {{AuthCookieName}}={{AuthCookieValue}}
-
-###
-
 # GET TodoLists
 GET {{Web_HostAddress}}/api/TodoLists
 Cookie: {{AuthCookieName}}={{AuthCookieValue}}
