@@ -69,16 +69,21 @@ The **.editorconfig** file defines the coding styles applicable to this solution
 ## Code Scaffolding
 
 Create a new command:
-
 ```
 dotnet new ca-usecase --name CreateTodoList --feature-name TodoLists --usecase-type command --return-type int
 ```
 
 Create a new query:
-
 ```
 dotnet new ca-usecase -n GetTodos -fn TodoLists -ut query -rt TodosVm
 ```
+
+Create a new migration
+```
+dotnet ef migrations add <MigrationName> --project src/Infrastructure --startup-project src/Web
+```
+
+
 
 ## Test
 
