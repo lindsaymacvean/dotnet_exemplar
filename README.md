@@ -53,6 +53,7 @@ This project uses **.NET User Secrets** to store the Azure OpenAI API key secure
 `dotnet user-secrets init --project src/Web` 
 2. Set your Azure API key 
 `dotnet user-secrets set "AzureOpenAI:ApiKey" "your-azure-api-key-here" --project src/Web` 
+`dotnet user-secrets set "AzureOpenAI:Endpoint" "https://your-instance.openai.azure.com/openai" --project src/Web`
 The key is stored securely on your machine (outside the codebase) and is never committed to Git 
 
 ## Build
@@ -88,8 +89,6 @@ Create a new migration (from an infrastructure entity and DbContext)
 dotnet ef migrations add <MigrationName> --project src/Infrastructure --startup-project src/Web
 dotnet ef database update --project src/Infrastructure --startup-project src/Web
 ```
-
-
 
 ## Test
 
