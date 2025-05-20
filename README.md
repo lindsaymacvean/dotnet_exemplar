@@ -47,14 +47,19 @@ docker ps
 docker stop sql_server
 ```
 
-## Build
+## 🔐 Local Development – Azure API Key Setup
+This project uses **.NET User Secrets** to store the Azure OpenAI API key securely during development.
+1. Initialize User Secrets (only once per repo) 
+`dotnet user-secrets init --project src/Web` 
+2. Set your Azure API key 
+`dotnet user-secrets set "AzureOpenAI:ApiKey" "your-azure-api-key-here" --project src/Web` 
+The key is stored securely on your machine (outside the codebase) and is never committed to Git 
 
+## Build
 Run `dotnet build -tl` to build the solution.
 
 ## Run
-
 To run the web application:
-
 ```bash
 dotnet watch --project src/Web run
 ```
