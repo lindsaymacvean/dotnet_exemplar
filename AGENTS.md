@@ -23,6 +23,26 @@ The user (acting as a technical architect) will also use this project to validat
 
 ---
 
+
+## 🔑 API Key Distinctions
+
+This project uses two distinct types of API keys throughout its chat/completion proxy mechanism:
+
+- **Client API Key (`api-key` header from the client):**
+  - Supplied by the calling client application (e.g., via Swagger UI or API consumer).
+  - This is created, stored, issued, and validated by this application (in your database, tied to users/clients, and checked by the validation handler/middleware).
+  - There can be many of these, one per customer/user/application/etc.
+  - This is the key end-users are instructed to use when invoking our proxy API.
+
+- **Service API Key (used for Azure OpenAI internal calls):**
+  - Held as a secret (in config/key vault), never exposed to clients or end-users.
+  - Used by the backend to authenticate with Azure OpenAI when making the outbound API call.
+  - There is typically only one of these, per environment/config.
+
+> When referencing or designing API flows or documentation, always clarify if you mean client api-key (external-facing) or service api-key (internal, to Azure only).
+
+---
+
 ### 🧪 TestAgent
 
 - **Goal**: Generate or validate unit and integration tests.
