@@ -27,7 +27,7 @@ public class CodexProxy : ControllerBase
     /// </summary>
     /// <param name="deploymentId">Deployment/model ID</param>
     /// <param name="apiVersion">API version. Must be 2025-01-01-preview</param>
-    /// <param name="httpContextAccessor">For header capture</param>
+    /// <param name="apiKey">API key used by your client for authentication (required)</param>
     /// <param name="request">Chat completions request body</param>
     /// <param name="cancellationToken">Cancellation</param>
     /// <returns>OpenAI chat response</returns>
@@ -36,11 +36,11 @@ public class CodexProxy : ControllerBase
     [ProducesResponseType(typeof(object), 400)]
     [ProducesResponseType(typeof(object), 401)]
     public async Task<IActionResult> ChatCompletions(
-        [FromRoute] string deploymentId,
-        [FromQuery(Name = "api-version")] string apiVersion,
-        [FromServices] IHttpContextAccessor httpContextAccessor,
         [FromBody] ChatCompletionsRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromHeader(Name = "api-key")] string apiKey = null!,
+        [FromRoute, System.ComponentModel.DefaultValue("gpt-4")] string deploymentId = "gpt-4",
+        [FromQuery(Name = "api-version"), System.ComponentModel.DefaultValue("2025-01-01-preview")] string apiVersion = "2025-01-01-preview")
     {
         if (string.IsNullOrWhiteSpace(apiVersion) ||
             apiVersion != "2025-01-01-preview")
@@ -48,19 +48,17 @@ public class CodexProxy : ControllerBase
             return BadRequest(new { error = "api-version must be 2025-01-01-preview" });
         }
 
-        // Validate api-token header
-        var headers = httpContextAccessor.HttpContext?.Request.Headers;
-        if (headers == null || !headers.TryGetValue("api-token", out var tokenHeader) || string.IsNullOrWhiteSpace(tokenHeader))
+        // Validate api-key header
+        if (string.IsNullOrWhiteSpace(apiKey))
         {
-            return Unauthorized(new { error = "Missing or empty api-token header" });
+            return Unauthorized(new { error = "Missing or empty api-key header" });
         }
-        string apiToken = tokenHeader!;
 
         // Call application layer to validate
-        bool valid = await _mediator.Send(new ValidateApiTokenQuery(apiToken), cancellationToken);
+        bool valid = await _mediator.Send(new ValidateApiTokenQuery(apiKey), cancellationToken);
         if (!valid)
         {
-            return Unauthorized(new { error = "Invalid or revoked API token" });
+            return Unauthorized(new { error = "Invalid or revoked api-key" });
         }
 
         // Call chat service for completion

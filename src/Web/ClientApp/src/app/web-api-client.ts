@@ -531,6 +531,100 @@ export class TodoListsClient implements ITodoListsClient {
     }
 }
 
+export interface ICodexProxyClient {
+    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class CodexProxyClient implements ICodexProxyClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse> {
+        let url_ = this.baseUrl + "/openai/deployments/{deploymentId}/chat/completions?";
+        if (deploymentId === undefined || deploymentId === null)
+            throw new Error("The parameter 'deploymentId' must be defined.");
+        url_ = url_.replace("{deploymentId}", encodeURIComponent("" + deploymentId));
+        if (apiVersion === null)
+            throw new Error("The parameter 'apiVersion' cannot be null.");
+        else if (apiVersion !== undefined)
+            url_ += "api-version=" + encodeURIComponent("" + apiVersion) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "api-key": apiKey !== undefined && apiKey !== null ? "" + apiKey : "",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processCodexProxy_ChatCompletions(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processCodexProxy_ChatCompletions(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<ChatCompletionsResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<ChatCompletionsResponse>;
+        }));
+    }
+
+    protected processCodexProxy_ChatCompletions(response: HttpResponseBase): Observable<ChatCompletionsResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = ChatCompletionsResponse.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result400: any = null;
+            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+                result400 = resultData400 !== undefined ? resultData400 : <any>null;
+    
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result401: any = null;
+            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+                result401 = resultData401 !== undefined ? resultData401 : <any>null;
+    
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
 export class PaginatedListOfTodoItemBriefDto implements IPaginatedListOfTodoItemBriefDto {
     items?: TodoItemBriefDto[];
     pageNumber?: number;
@@ -1064,6 +1158,210 @@ export class UpdateTodoListCommand implements IUpdateTodoListCommand {
 export interface IUpdateTodoListCommand {
     id?: number;
     title?: string | undefined;
+}
+
+export class ChatCompletionsResponse implements IChatCompletionsResponse {
+    id?: string;
+    object?: string;
+    created?: number;
+    model?: string;
+    choices?: ChatChoice[];
+
+    constructor(data?: IChatCompletionsResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.object = _data["object"];
+            this.created = _data["created"];
+            this.model = _data["model"];
+            if (Array.isArray(_data["choices"])) {
+                this.choices = [] as any;
+                for (let item of _data["choices"])
+                    this.choices!.push(ChatChoice.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): ChatCompletionsResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ChatCompletionsResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["object"] = this.object;
+        data["created"] = this.created;
+        data["model"] = this.model;
+        if (Array.isArray(this.choices)) {
+            data["choices"] = [];
+            for (let item of this.choices)
+                data["choices"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IChatCompletionsResponse {
+    id?: string;
+    object?: string;
+    created?: number;
+    model?: string;
+    choices?: ChatChoice[];
+}
+
+export class ChatChoice implements IChatChoice {
+    index?: number;
+    message?: ChatMessage;
+    finishReason?: string;
+
+    constructor(data?: IChatChoice) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.index = _data["index"];
+            this.message = _data["message"] ? ChatMessage.fromJS(_data["message"]) : <any>undefined;
+            this.finishReason = _data["finishReason"];
+        }
+    }
+
+    static fromJS(data: any): ChatChoice {
+        data = typeof data === 'object' ? data : {};
+        let result = new ChatChoice();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["index"] = this.index;
+        data["message"] = this.message ? this.message.toJSON() : <any>undefined;
+        data["finishReason"] = this.finishReason;
+        return data;
+    }
+}
+
+export interface IChatChoice {
+    index?: number;
+    message?: ChatMessage;
+    finishReason?: string;
+}
+
+export class ChatMessage implements IChatMessage {
+    role?: string;
+    content?: string;
+
+    constructor(data?: IChatMessage) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.role = "user";
+            this.content = "Tell me how amazing I am.";
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.role = _data["role"] !== undefined ? _data["role"] : "user";
+            this.content = _data["content"] !== undefined ? _data["content"] : "Tell me how amazing I am.";
+        }
+    }
+
+    static fromJS(data: any): ChatMessage {
+        data = typeof data === 'object' ? data : {};
+        let result = new ChatMessage();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["role"] = this.role;
+        data["content"] = this.content;
+        return data;
+    }
+}
+
+export interface IChatMessage {
+    role?: string;
+    content?: string;
+}
+
+export class ChatCompletionsRequest implements IChatCompletionsRequest {
+    messages?: ChatMessage[];
+    temperature?: number | undefined;
+    maxTokens?: number | undefined;
+
+    constructor(data?: IChatCompletionsRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+        if (!data) {
+            this.temperature = 0.7;
+            this.maxTokens = 1024;
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["messages"])) {
+                this.messages = [] as any;
+                for (let item of _data["messages"])
+                    this.messages!.push(ChatMessage.fromJS(item));
+            }
+            this.temperature = _data["temperature"] !== undefined ? _data["temperature"] : 0.7;
+            this.maxTokens = _data["maxTokens"] !== undefined ? _data["maxTokens"] : 1024;
+        }
+    }
+
+    static fromJS(data: any): ChatCompletionsRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new ChatCompletionsRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.messages)) {
+            data["messages"] = [];
+            for (let item of this.messages)
+                data["messages"].push(item.toJSON());
+        }
+        data["temperature"] = this.temperature;
+        data["maxTokens"] = this.maxTokens;
+        return data;
+    }
+}
+
+export interface IChatCompletionsRequest {
+    messages?: ChatMessage[];
+    temperature?: number | undefined;
+    maxTokens?: number | undefined;
 }
 
 export class SwaggerException extends Error {

@@ -55,7 +55,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -86,7 +91,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       }
     },
     "/api/TodoItems/{id}": {
@@ -126,7 +136,12 @@
           "400": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -149,7 +164,12 @@
           "204": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       }
     },
     "/api/TodoItems/UpdateDetail/{id}": {
@@ -189,7 +209,12 @@
           "400": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       }
     },
     "/api/TodoLists": {
@@ -209,7 +234,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -240,7 +270,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       }
     },
     "/api/TodoLists/{id}": {
@@ -280,7 +315,12 @@
           "400": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -303,7 +343,12 @@
           "204": {
             "description": ""
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
       }
     },
     "/openai/deployments/{deploymentId}/chat/completions": {
@@ -314,22 +359,33 @@
         "operationId": "CodexProxy_ChatCompletions",
         "parameters": [
           {
+            "name": "api-key",
+            "x-originalName": "apiKey",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          },
+          {
             "name": "deploymentId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": "gpt-4"
             },
-            "x-position": 1
+            "x-position": 3
           },
           {
             "name": "api-version",
             "x-originalName": "apiVersion",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": "2025-01-01-preview"
             },
-            "x-position": 2
+            "x-position": 4
           }
         ],
         "requestBody": {
@@ -342,7 +398,7 @@
             }
           },
           "required": true,
-          "x-position": 3
+          "x-position": 1
         },
         "responses": {
           "200": {
@@ -651,10 +707,12 @@
         "additionalProperties": false,
         "properties": {
           "role": {
-            "type": "string"
+            "type": "string",
+            "default": "user"
           },
           "content": {
-            "type": "string"
+            "type": "string",
+            "default": "Tell me how amazing I am."
           }
         }
       },
@@ -671,14 +729,24 @@
           "temperature": {
             "type": "number",
             "format": "double",
+            "default": 0.7,
             "nullable": true
           },
           "maxTokens": {
             "type": "integer",
             "format": "int32",
+            "default": 1024,
             "nullable": true
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "Enter your API key",
+        "name": "api-key",
+        "in": "header"
       }
     }
   }
