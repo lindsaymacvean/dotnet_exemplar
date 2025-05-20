@@ -125,8 +125,26 @@ public class ApplicationDbContextInitialiser
                     new TodoItem { Title = "Reward yourself with a nice, long nap 🏆" },
                 }
             });
-
             await _context.SaveChangesAsync();
+        }
+
+        // --- Seed dev/local client api-key token ---
+        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        if (env == "Development" || env == "Local")
+        {
+            string devToken = "f6e4d7fe-8e76-4d8c-bf76-23c7fad51eab";
+            // Only add if not exists
+            if (!_context.ApiTokens.Any(a => a.Key == devToken))
+            {
+                _context.ApiTokens.Add(new dotnet_exemplar.Domain.Entities.ApiToken
+                {
+                    Key = devToken,
+                    Email = "developer@localhost",
+                    IsRevoked = false,
+                    Created = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -12,6 +12,10 @@ public class ApiTokenConfiguration : IEntityTypeConfiguration<ApiToken>
             .HasMaxLength(200)
             .IsRequired();
 
+        builder.Property(t => t.Email)
+            .HasMaxLength(200)
+            .IsRequired();
+
         builder.HasIndex(t => t.Key).IsUnique();
     }
 }
