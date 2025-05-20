@@ -3,7 +3,7 @@ using dotnet_exemplar.Application.Common.Interfaces;
 using dotnet_exemplar.Infrastructure.Data;
 using dotnet_exemplar.Web.Services;
 using Microsoft.AspNetCore.Mvc;
-
+using NSwag.Generation.Processors.Security;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -37,8 +37,20 @@ public static class DependencyInjection
 
         builder.Services.AddOpenApiDocument((configure, sp) =>
         {
+            configure.DocumentName = "v1";
             configure.Title = "dotnet_exemplar API";
 
+            configure.AddSecurity("ApiKey", new NSwag.OpenApiSecurityScheme
+            {
+                Type = NSwag.OpenApiSecuritySchemeType.ApiKey,
+                Name = "api-key",
+                In = NSwag.OpenApiSecurityApiKeyLocation.Header,
+                Description = "Enter your API key"
+            });
+
+            configure.OperationProcessors.Add(
+                new AspNetCoreOperationSecurityScopeProcessor("ApiKey")
+            );
         });
     }
 

@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using dotnet_exemplar.Application.OpenAI.Models;
 using dotnet_exemplar.Application.OpenAI.Queries;
 using dotnet_exemplar.Application.Common.Interfaces;
+using dotnet_exemplar.Application.Common.Models;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace dotnet_exemplar.Web.Endpoints;
 
@@ -15,11 +18,13 @@ public class CodexProxy : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IChatService _chatService;
+    private readonly ILogger<CodexProxy> _logger;
 
-    public CodexProxy(IMediator mediator, IChatService chatService)
+    public CodexProxy(IMediator mediator, IChatService chatService, ILogger<CodexProxy> logger)
     {
         _mediator = mediator;
         _chatService = chatService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -27,7 +32,7 @@ public class CodexProxy : ControllerBase
     /// </summary>
     /// <param name="deploymentId">Deployment/model ID</param>
     /// <param name="apiVersion">API version. Must be 2025-01-01-preview</param>
-    /// <param name="apiKey">API key used by your client for authentication (required)</param>
+    /// <param name="apiKey">Client API key issued by this service. <b>Not the Azure service API key!</b> Use the default pre-filled key for local/dev.<br/>EXAMPLE: <code>f6e4d7fe-8e76-4d8c-bf76-23c7fad51eab</code></param>
     /// <param name="request">Chat completions request body</param>
     /// <param name="cancellationToken">Cancellation</param>
     /// <returns>OpenAI chat response</returns>
@@ -38,19 +43,23 @@ public class CodexProxy : ControllerBase
     public async Task<IActionResult> ChatCompletions(
         [FromBody] ChatCompletionsRequest request,
         CancellationToken cancellationToken,
-        [FromHeader(Name = "api-key")] string apiKey = null!,
         [FromRoute, System.ComponentModel.DefaultValue("gpt-4")] string deploymentId = "gpt-4",
         [FromQuery(Name = "api-version"), System.ComponentModel.DefaultValue("2025-01-01-preview")] string apiVersion = "2025-01-01-preview")
     {
-        if (string.IsNullOrWhiteSpace(apiVersion) ||
-            apiVersion != "2025-01-01-preview")
+        var apiKey = Request.Headers["api-key"].FirstOrDefault();
+        _logger.LogInformation("Received chat completion request for deployment {DeploymentId}", deploymentId);
+        _logger.LogInformation("API Version: {ApiVersion}", apiVersion);
+        _logger.LogInformation("Request body: {@Request}", request);
+
+        if (string.IsNullOrEmpty(apiVersion) || apiVersion != "2025-01-01-preview")
         {
-            return BadRequest(new { error = "api-version must be 2025-01-01-preview" });
+            _logger.LogWarning("Invalid API version: {ApiVersion}", apiVersion);
+            return BadRequest(new { error = "Invalid API version" });
         }
 
-        // Validate api-key header
-        if (string.IsNullOrWhiteSpace(apiKey))
+        if (string.IsNullOrEmpty(apiKey))
         {
+            _logger.LogWarning("Missing API key");
             return Unauthorized(new { error = "Missing or empty api-key header" });
         }
 
@@ -61,13 +70,22 @@ public class CodexProxy : ControllerBase
             return Unauthorized(new { error = "Invalid or revoked api-key" });
         }
 
-        // Call chat service for completion
-        var response = await _chatService.GetChatCompletionsAsync(request, deploymentId, cancellationToken);
-        // Ensure the response includes a model (fallback if missing)
-        if (string.IsNullOrWhiteSpace(response.Model))
+        try
         {
-            response.Model = "gpt-4.1";
+            // Call chat service for completion
+            var response = await _chatService.GetChatCompletionsAsync(request, deploymentId, cancellationToken);
+            _logger.LogInformation("Generated response: {@Response}", response);
+            // Ensure the response includes a model (fallback if missing)
+            if (string.IsNullOrWhiteSpace(response.Model))
+            {
+                response.Model = "gpt-4.1";
+            }
+            return Ok(response);
         }
-        return Ok(response);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating chat completion");
+            return Problem(ex.Message);
+        }
     }
 }

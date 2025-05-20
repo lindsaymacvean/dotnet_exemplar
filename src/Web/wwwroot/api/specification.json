@@ -359,15 +359,6 @@
         "operationId": "CodexProxy_ChatCompletions",
         "parameters": [
           {
-            "name": "api-key",
-            "x-originalName": "apiKey",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            },
-            "x-position": 2
-          },
-          {
             "name": "deploymentId",
             "in": "path",
             "required": true,
@@ -375,7 +366,7 @@
               "type": "string",
               "default": "gpt-4"
             },
-            "x-position": 3
+            "x-position": 2
           },
           {
             "name": "api-version",
@@ -385,7 +376,7 @@
               "type": "string",
               "default": "2025-01-01-preview"
             },
-            "x-position": 4
+            "x-position": 3
           }
         ],
         "requestBody": {

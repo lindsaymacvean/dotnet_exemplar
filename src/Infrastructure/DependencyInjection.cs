@@ -27,7 +27,6 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString);
         });
 
-
         builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
@@ -37,8 +36,11 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
-        builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddTransient<IIdentityService, IdentityService>();
+        builder.Services.AddSingleton(TimeProvider.System);
+
+        // Register AzureOpenAiChatService for IChatService, and configure HttpClient
+        builder.Services.AddHttpClient<IChatService, dotnet_exemplar.Infrastructure.OpenAI.AzureOpenAiChatService>();
 
         builder.Services.AddAuthorization(options =>
             options.AddPolicy(Policies.CanPurge, policy => policy.RequireRole(Roles.Administrator)));
