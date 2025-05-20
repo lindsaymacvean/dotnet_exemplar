@@ -42,7 +42,31 @@ public class ApplicationDbContextInitialiser
     {
         try
         {
-            await _context.Database.MigrateAsync();
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                // In development, we'll try to migrate but won't fail if there are pending changes
+                try
+                {
+                    await _context.Database.MigrateAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "An error occurred while migrating the database in development. This is expected if there are pending model changes.");
+                }
+            }
+            else
+            {
+                // In production, we want to ensure migrations are up to date
+                var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    var migrationsList = string.Join(", ", pendingMigrations);
+                    _logger.LogError("Database has pending migrations that need to be applied: {Migrations}", migrationsList);
+                    throw new InvalidOperationException($"Database has pending migrations that need to be applied: {migrationsList}");
+                }
+                
+                await _context.Database.MigrateAsync();
+            }
         }
         catch (Exception ex)
         {

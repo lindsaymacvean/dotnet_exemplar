@@ -107,3 +107,16 @@ Then, in a new console, run the tests:
 cd .\src\Web\
 dotnet test
 ```
+
+## 🚀 First time Production Deployment Checklist
+
+Before deploying to production, make sure to:
+
+1. **Set the ASP.NET Core environment variable to Production**  
+   This ensures that production-specific settings and behaviors are used.
+
+   ```bash
+   export ASPNETCORE_ENVIRONMENT=Production
+
+2. Set up mssql database and azure secrets
+3. Reset admin password
