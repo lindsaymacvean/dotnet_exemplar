@@ -78,9 +78,10 @@ Create a new query:
 dotnet new ca-usecase -n GetTodos -fn TodoLists -ut query -rt TodosVm
 ```
 
-Create a new migration
+Create a new migration (from an infrastructure entity and DbContext)
 ```
 dotnet ef migrations add <MigrationName> --project src/Infrastructure --startup-project src/Web
+dotnet ef database update --project src/Infrastructure --startup-project src/Web
 ```
 
 
