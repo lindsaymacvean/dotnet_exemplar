@@ -13,18 +13,23 @@ public static class DependencyInjection
     {
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+        // Get current logged in user
         builder.Services.AddScoped<IUser, CurrentUser>();
 
         builder.Services.AddHttpContextAccessor();
+
+        // provides /health endpoint and checks if db is reachable
         builder.Services.AddHealthChecks()
             .AddDbContextCheck<ApplicationDbContext>();
 
         builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
-        builder.Services.AddRazorPages();
+        // Unnecessary because Angular is used for the frontend
+        //builder.Services.AddRazorPages();
 
         // Customise default API behaviour
         builder.Services.Configure<ApiBehaviorOptions>(options =>
+            // Suppress model state invalid filter
             options.SuppressModelStateInvalidFilter = true);
 
         builder.Services.AddEndpointsApiExplorer();
