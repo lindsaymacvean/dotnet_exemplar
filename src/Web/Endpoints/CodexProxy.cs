@@ -9,7 +9,7 @@ namespace dotnet_exemplar.Web.Endpoints;
 /// <summary>
 /// OpenAI mimicked chat completions API controller
 /// </summary>
-[ApiController]
+[ApiController] // model validation/400, automatic binding, openapi generation
 [Route("openai/deployments/{deploymentId}/chat/completions")]
 public class CodexProxy : ControllerBase
 {

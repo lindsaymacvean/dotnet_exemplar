@@ -16,6 +16,7 @@ public static class DependencyInjection
         // Get current logged in user
         builder.Services.AddScoped<IUser, CurrentUser>();
 
+        // For accessing things like Headers from the handler
         builder.Services.AddHttpContextAccessor();
 
         // provides /health endpoint and checks if db is reachable

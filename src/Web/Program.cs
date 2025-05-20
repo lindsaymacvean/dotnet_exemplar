@@ -31,12 +31,12 @@ app.UseSwaggerUi(settings =>
     settings.DocumentPath = "/api/specification.json";
 });
 
-app.MapRazorPages();
+// Unnecessary because Angular is used for the frontend
+// app.MapRazorPages();
 
 app.MapFallbackToFile("index.html");
 
 app.UseExceptionHandler(options => { });
-
 
 app.MapEndpoints();
 
