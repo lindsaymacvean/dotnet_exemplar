@@ -532,7 +532,7 @@ export class TodoListsClient implements ITodoListsClient {
 }
 
 export interface ICodexProxyClient {
-    codexProxy_ChatCompletions(deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse>;
+    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse>;
 }
 
 @Injectable({
@@ -548,7 +548,7 @@ export class CodexProxyClient implements ICodexProxyClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    codexProxy_ChatCompletions(deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse> {
+    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse> {
         let url_ = this.baseUrl + "/openai/deployments/{deploymentId}/chat/completions?";
         if (deploymentId === undefined || deploymentId === null)
             throw new Error("The parameter 'deploymentId' must be defined.");
@@ -566,6 +566,7 @@ export class CodexProxyClient implements ICodexProxyClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "api-key": apiKey !== undefined && apiKey !== null ? "" + apiKey : "",
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             })

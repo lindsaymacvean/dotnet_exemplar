@@ -1,5 +1,5 @@
 {
-  "x-generator": "NSwag v14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))",
+  "x-generator": "NSwag v14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))",
   "openapi": "3.0.0",
   "info": {
     "title": "dotnet_exemplar API",
@@ -359,14 +359,23 @@
         "operationId": "CodexProxy_ChatCompletions",
         "parameters": [
           {
+            "name": "api-key",
+            "x-originalName": "apiKey",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          },
+          {
             "name": "deploymentId",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "default": "gpt-4"
+              "default": "gpt-4.1"
             },
-            "x-position": 2
+            "x-position": 3
           },
           {
             "name": "api-version",
@@ -376,7 +385,7 @@
               "type": "string",
               "default": "2025-01-01-preview"
             },
-            "x-position": 3
+            "x-position": 4
           }
         ],
         "requestBody": {
@@ -389,7 +398,7 @@
             }
           },
           "required": true,
-          "x-position": 1
+          "x-position": 2
         },
         "responses": {
           "200": {

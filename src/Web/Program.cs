@@ -25,22 +25,13 @@ app.UseHealthChecks("/health");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// In local/dev environments, serve a global window.DevApiKey JS to inject the default key
-if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Local")
-{
-    app.MapGet("/swagger-autokey.js", async ctx =>
-    {
-        ctx.Response.ContentType = "application/javascript";
-        await ctx.Response.WriteAsync("window.DevApiKey = \"f6e4d7fe-8e76-4d8c-bf76-23c7fad51eab\";");
-    });
-}
-
 // Add Swagger UI static JS for auto api-key, prefill dev key if running locally.
 app.UseSwaggerUi(settings =>
 {
     settings.Path = "/api";
     settings.DocumentPath = "/api/specification.json";
     settings.AdditionalSettings["persistAuthorization"] = true;
+    settings.AdditionalSettings["injectScripts"] = new[] { "/swagger-autokey.js" };
     // Setting variable the JS can read to know about dev
     if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Local")
     {

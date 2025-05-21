@@ -1,11 +1,8 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using dotnet_exemplar.Application.OpenAI.Models;
 using dotnet_exemplar.Application.OpenAI.Queries;
 using dotnet_exemplar.Application.Common.Interfaces;
-using dotnet_exemplar.Application.Common.Models;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
+using System.ComponentModel;
 
 namespace dotnet_exemplar.Web.Endpoints;
 
@@ -41,12 +38,12 @@ public class CodexProxy : ControllerBase
     [ProducesResponseType(typeof(object), 400)]
     [ProducesResponseType(typeof(object), 401)]
     public async Task<IActionResult> ChatCompletions(
+        [FromHeader(Name = "api-key")] string apiKey,
         [FromBody] ChatCompletionsRequest request,
         CancellationToken cancellationToken,
-        [FromRoute, System.ComponentModel.DefaultValue("gpt-4")] string deploymentId = "gpt-4",
+        [FromRoute, System.ComponentModel.DefaultValue("gpt-4.1")] string deploymentId = "gpt-4.1",
         [FromQuery(Name = "api-version"), System.ComponentModel.DefaultValue("2025-01-01-preview")] string apiVersion = "2025-01-01-preview")
     {
-        var apiKey = Request.Headers["api-key"].FirstOrDefault();
         _logger.LogInformation("Received chat completion request for deployment {DeploymentId}", deploymentId);
         _logger.LogInformation("API Version: {ApiVersion}", apiVersion);
         _logger.LogInformation("Request body: {@Request}", request);
