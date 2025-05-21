@@ -30,17 +30,6 @@
       "allowReferencesWithProperties": false,
       "useXmlDocumentation": true,
       "resolveExternalXmlDocumentation": true,
-      "securityDefinitions": {
-        "ApiKey": {
-          "type": "apiKey",
-          "name": "api-key",
-          "in": "header",
-          "description": "API Key"
-        }
-      },
-      "security": [
-        { "ApiKey": [] }
-      ],
       "excludedTypeNames": [],
       "serviceHost": null,
       "serviceBasePath": null,
@@ -50,9 +39,6 @@
       "infoVersion": "1.0.0",
       "documentTemplate": null,
       "documentProcessorTypes": [],
-      "operationProcessorTypes": [
-        "dotnet_exemplar.Web.Swagger.RemoveApiKeyFromParametersProcessor, dotnet_exemplar.Web"
-      ],
       "typeNameGeneratorType": null,
       "schemaNameGeneratorType": null,
       "contractResolverType": null,

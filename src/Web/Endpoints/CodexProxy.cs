@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using dotnet_exemplar.Application.OpenAI.Models;
 using dotnet_exemplar.Application.OpenAI.Queries;
 using dotnet_exemplar.Application.Common.Interfaces;
-using System.ComponentModel;
 
 namespace dotnet_exemplar.Web.Endpoints;
 
@@ -44,9 +43,6 @@ public class CodexProxy : ControllerBase
         [FromRoute, System.ComponentModel.DefaultValue("gpt-4.1")] string deploymentId = "gpt-4.1",
         [FromQuery(Name = "api-version"), System.ComponentModel.DefaultValue("2025-01-01-preview")] string apiVersion = "2025-01-01-preview")
     {
-        _logger.LogInformation("Received chat completion request for deployment {DeploymentId}", deploymentId);
-        _logger.LogInformation("API Version: {ApiVersion}", apiVersion);
-        _logger.LogInformation("Request body: {@Request}", request);
 
         if (string.IsNullOrEmpty(apiVersion) || apiVersion != "2025-01-01-preview")
         {
