@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using dotnet_exemplar.Application.OpenAI.Models;
 using dotnet_exemplar.Application.OpenAI.Queries;
 using dotnet_exemplar.Application.Common.Interfaces;
+using System.Text.Json;
 
 namespace dotnet_exemplar.Web.Endpoints;
 
@@ -38,46 +39,30 @@ public class CodexProxy : ControllerBase
     [ProducesResponseType(typeof(object), 401)]
     public async Task<IActionResult> ChatCompletions(
         [FromHeader(Name = "api-key")] string apiKey,
-        [FromBody] ChatCompletionsRequest request,
-        CancellationToken cancellationToken,
-        [FromRoute, System.ComponentModel.DefaultValue("gpt-4.1")] string deploymentId = "gpt-4.1",
-        [FromQuery(Name = "api-version"), System.ComponentModel.DefaultValue("2025-01-01-preview")] string apiVersion = "2025-01-01-preview")
+        [FromRoute] string deploymentId,
+        [FromBody] System.Text.Json.JsonElement rawPayload,
+        CancellationToken cancellationToken)
     {
-
-        if (string.IsNullOrEmpty(apiVersion) || apiVersion != "2025-01-01-preview")
-        {
-            _logger.LogWarning("Invalid API version: {ApiVersion}", apiVersion);
-            return BadRequest(new { error = "Invalid API version" });
-        }
-
+        // Optionally add your API version checks here if required, outside the refactor scope
         if (string.IsNullOrEmpty(apiKey))
         {
             _logger.LogWarning("Missing API key");
             return Unauthorized(new { error = "Missing or empty api-key header" });
         }
-
-        // Call application layer to validate
         bool valid = await _mediator.Send(new ValidateApiTokenQuery(apiKey), cancellationToken);
         if (!valid)
         {
             return Unauthorized(new { error = "Invalid or revoked api-key" });
         }
-
         try
         {
-            // Call chat service for completion
-            var response = await _chatService.GetChatCompletionsAsync(request, deploymentId, cancellationToken);
-            _logger.LogInformation("Generated response: {@Response}", response);
-            // Ensure the response includes a model (fallback if missing)
-            if (string.IsNullOrWhiteSpace(response.Model))
-            {
-                response.Model = "gpt-4.1";
-            }
-            return Ok(response);
+            string payloadString = rawPayload.GetRawText();
+            var result = await _chatService.GetChatCompletionsAsync(payloadString, deploymentId, cancellationToken);
+            return Content(result, "application/json");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating chat completion");
+            _logger.LogError(ex, "Error proxying chat completions");
             return Problem(ex.Message);
         }
     }

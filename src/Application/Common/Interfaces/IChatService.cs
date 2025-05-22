@@ -4,5 +4,6 @@ namespace dotnet_exemplar.Application.Common.Interfaces;
 
 public interface IChatService
 {
-    Task<ChatCompletionsResponse> GetChatCompletionsAsync(ChatCompletionsRequest request, string deploymentId, CancellationToken cancellationToken);
+    /// <summary>Proxies a raw (JSON) chat completions request to the AI service and returns the raw response.</summary>
+    Task<string> GetChatCompletionsAsync(string rawPayload, string deploymentId, CancellationToken cancellationToken);
 }

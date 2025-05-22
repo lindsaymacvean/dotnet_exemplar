@@ -1,6 +1,4 @@
 using dotnet_exemplar.Application.Common.Interfaces;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace dotnet_exemplar.Application.OpenAI.Queries;
 

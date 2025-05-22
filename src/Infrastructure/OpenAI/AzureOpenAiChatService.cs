@@ -26,49 +26,35 @@ public class AzureOpenAiChatService : IChatService
         _apiKey = _configuration["AzureOpenAI:ApiKey"] ?? throw new InvalidOperationException("AzureOpenAI:ApiKey not configured");
     }
 
-    public async Task<ChatCompletionsResponse> GetChatCompletionsAsync(
-        ChatCompletionsRequest request,
+    public async Task<string> GetChatCompletionsAsync(
+        string rawPayload,
         string deploymentId,
         CancellationToken cancellationToken)
     {
-        
         var endpoint = $"{_endpoint.TrimEnd('/')}/deployments/{deploymentId}/chat/completions?api-version={_apiVersion}";
+        var content = new StringContent(rawPayload, Encoding.UTF8, "application/json");
 
-        var content = new StringContent(
-        JsonSerializer.Serialize(request, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }),
-        Encoding.UTF8,
-        "application/json");
+        //_logger.LogInformation("[AzureOpenAiChatService] Outbound endpoint: {Endpoint}", endpoint);
+        //_logger.LogInformation("[AzureOpenAiChatService] Outbound payload: {Payload}", rawPayload);
 
-        _logger.LogInformation("Request content: {@Request}", request);
-        _logger.LogInformation("Endpoint: {Endpoint}", endpoint);
-        _logger.LogInformation("Api Key: {ApiKey}", _apiKey);
-
+        // Ensure proper headers
         _httpClient.DefaultRequestHeaders.Remove("api-key");
         _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
 
-        var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-        _logger.LogInformation("Received response with status code: {StatusCode}", response.StatusCode);
+        // Explicitly provide model header (not normally needed but Azure error says it's supported)
+        _httpClient.DefaultRequestHeaders.Remove("x-ms-model-mesh-model-name");
+        _httpClient.DefaultRequestHeaders.Add("x-ms-model-mesh-model-name", deploymentId);
 
+        var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
+        //_logger.LogInformation("[AzureOpenAiChatService] Received status: {StatusCode}", response.StatusCode);
+
+        string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Error response from Azure OpenAI: {ErrorContent}", errorContent);
-            throw new Exception($"Azure OpenAI API returned {response.StatusCode}: {errorContent}");
+            _logger.LogError("[AzureOpenAiChatService] Error response: {ErrorContent}", responseContent);
+            throw new Exception($"Azure OpenAI API returned {response.StatusCode}: {responseContent}");
         }
-
-        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        _logger.LogInformation("Response content: {ResponseContent}", responseContent);
-
-        var result = JsonSerializer.Deserialize<ChatCompletionsResponse>(responseContent);
-        if (result == null)
-        {
-            _logger.LogError("Failed to deserialize response content");
-            throw new Exception("Failed to deserialize response from Azure OpenAI");
-        }
-
-        return result;
+        //_logger.LogInformation("[AzureOpenAiChatService] Raw Azure response: {ResponseContent}", responseContent);
+        return responseContent;
     }
 }

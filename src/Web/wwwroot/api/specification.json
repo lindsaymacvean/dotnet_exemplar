@@ -372,33 +372,20 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "default": "gpt-4.1"
+              "type": "string"
             },
-            "x-position": 3
-          },
-          {
-            "name": "api-version",
-            "x-originalName": "apiVersion",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": "2025-01-01-preview"
-            },
-            "x-position": 4
+            "x-position": 2
           }
         ],
         "requestBody": {
-          "x-name": "request",
+          "x-name": "rawPayload",
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatCompletionsRequest"
-              }
+              "schema": {}
             }
           },
           "required": true,
-          "x-position": 2
+          "x-position": 3
         },
         "responses": {
           "200": {
@@ -683,6 +670,23 @@
             "items": {
               "$ref": "#/components/schemas/ChatChoice"
             }
+          },
+          "promptFilterResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromptFilterResult"
+            }
+          },
+          "systemFingerprint": {
+            "type": "string"
+          },
+          "usage": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UsageInfo"
+              }
+            ]
           }
         }
       },
@@ -694,49 +698,206 @@
             "type": "integer",
             "format": "int32"
           },
-          "message": {
-            "$ref": "#/components/schemas/ChatMessage"
+          "contentFilterResults": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ChoiceContentFilterResults"
+              }
+            ]
           },
           "finishReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "logprobs": {
+            "nullable": true
+          },
+          "message": {
+            "$ref": "#/components/schemas/ChoiceMessage"
+          }
+        }
+      },
+      "ChoiceContentFilterResults": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hate": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ModerationResult"
+              }
+            ]
+          },
+          "selfHarm": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ModerationResult"
+              }
+            ]
+          },
+          "sexual": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ModerationResult"
+              }
+            ]
+          },
+          "violence": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ModerationResult"
+              }
+            ]
+          },
+          "protectedMaterialText": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ProtectedMaterialFilterResult"
+              }
+            ]
+          },
+          "protectedMaterialCode": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ProtectedMaterialFilterResult"
+              }
+            ]
+          }
+        }
+      },
+      "ModerationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filtered": {
+            "type": "boolean"
+          },
+          "severity": {
             "type": "string"
           }
         }
       },
-      "ChatMessage": {
+      "ProtectedMaterialFilterResult": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "role": {
-            "type": "string",
-            "default": "user"
+          "filtered": {
+            "type": "boolean"
           },
-          "content": {
-            "type": "string",
-            "default": "Tell me how amazing I am."
+          "detected": {
+            "type": "boolean"
           }
         }
       },
-      "ChatCompletionsRequest": {
+      "ChoiceMessage": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "messages": {
+          "annotations": {
             "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChatMessage"
-            }
+            "nullable": true,
+            "items": {}
           },
-          "temperature": {
-            "type": "number",
-            "format": "double",
-            "default": 0.7,
+          "content": {
+            "type": "string"
+          },
+          "refusal": {
             "nullable": true
           },
-          "maxTokens": {
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "PromptFilterResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "promptIndex": {
             "type": "integer",
-            "format": "int32",
-            "default": 1024,
-            "nullable": true
+            "format": "int32"
+          },
+          "contentFilterResults": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
+          }
+        }
+      },
+      "UsageInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "completionTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "promptTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completionTokensDetails": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CompletionTokensDetails"
+              }
+            ]
+          },
+          "promptTokensDetails": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PromptTokensDetails"
+              }
+            ]
+          }
+        }
+      },
+      "CompletionTokensDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "acceptedPredictionTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "audioTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reasoningTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejectedPredictionTokens": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PromptTokensDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "audioTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cachedTokens": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }

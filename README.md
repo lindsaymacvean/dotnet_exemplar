@@ -112,6 +112,9 @@ cd .\src\Web\
 dotnet test
 ```
 
+## Debugging
+Alter src/Web/appsettings.json `"Default": "Debug"`
+
 ## 🚀 First time Production Deployment Checklist
 
 Before deploying to production, make sure to:

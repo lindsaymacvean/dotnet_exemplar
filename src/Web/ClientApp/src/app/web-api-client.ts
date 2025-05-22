@@ -532,7 +532,7 @@ export class TodoListsClient implements ITodoListsClient {
 }
 
 export interface ICodexProxyClient {
-    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse>;
+    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, rawPayload: any): Observable<ChatCompletionsResponse>;
 }
 
 @Injectable({
@@ -548,18 +548,14 @@ export class CodexProxyClient implements ICodexProxyClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, apiVersion: string | undefined, request: ChatCompletionsRequest): Observable<ChatCompletionsResponse> {
-        let url_ = this.baseUrl + "/openai/deployments/{deploymentId}/chat/completions?";
+    codexProxy_ChatCompletions(apiKey: string | undefined, deploymentId: string, rawPayload: any): Observable<ChatCompletionsResponse> {
+        let url_ = this.baseUrl + "/openai/deployments/{deploymentId}/chat/completions";
         if (deploymentId === undefined || deploymentId === null)
             throw new Error("The parameter 'deploymentId' must be defined.");
         url_ = url_.replace("{deploymentId}", encodeURIComponent("" + deploymentId));
-        if (apiVersion === null)
-            throw new Error("The parameter 'apiVersion' cannot be null.");
-        else if (apiVersion !== undefined)
-            url_ += "api-version=" + encodeURIComponent("" + apiVersion) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(request);
+        const content_ = JSON.stringify(rawPayload);
 
         let options_ : any = {
             body: content_,
@@ -1166,6 +1162,9 @@ export class ChatCompletionsResponse implements IChatCompletionsResponse {
     created?: number;
     model?: string;
     choices?: ChatChoice[];
+    promptFilterResults?: PromptFilterResult[];
+    systemFingerprint?: string;
+    usage?: UsageInfo | undefined;
 
     constructor(data?: IChatCompletionsResponse) {
         if (data) {
@@ -1187,6 +1186,13 @@ export class ChatCompletionsResponse implements IChatCompletionsResponse {
                 for (let item of _data["choices"])
                     this.choices!.push(ChatChoice.fromJS(item));
             }
+            if (Array.isArray(_data["promptFilterResults"])) {
+                this.promptFilterResults = [] as any;
+                for (let item of _data["promptFilterResults"])
+                    this.promptFilterResults!.push(PromptFilterResult.fromJS(item));
+            }
+            this.systemFingerprint = _data["systemFingerprint"];
+            this.usage = _data["usage"] ? UsageInfo.fromJS(_data["usage"]) : <any>undefined;
         }
     }
 
@@ -1208,6 +1214,13 @@ export class ChatCompletionsResponse implements IChatCompletionsResponse {
             for (let item of this.choices)
                 data["choices"].push(item.toJSON());
         }
+        if (Array.isArray(this.promptFilterResults)) {
+            data["promptFilterResults"] = [];
+            for (let item of this.promptFilterResults)
+                data["promptFilterResults"].push(item.toJSON());
+        }
+        data["systemFingerprint"] = this.systemFingerprint;
+        data["usage"] = this.usage ? this.usage.toJSON() : <any>undefined;
         return data;
     }
 }
@@ -1218,12 +1231,17 @@ export interface IChatCompletionsResponse {
     created?: number;
     model?: string;
     choices?: ChatChoice[];
+    promptFilterResults?: PromptFilterResult[];
+    systemFingerprint?: string;
+    usage?: UsageInfo | undefined;
 }
 
 export class ChatChoice implements IChatChoice {
     index?: number;
-    message?: ChatMessage;
-    finishReason?: string;
+    contentFilterResults?: ChoiceContentFilterResults | undefined;
+    finishReason?: string | undefined;
+    logprobs?: any | undefined;
+    message?: ChoiceMessage;
 
     constructor(data?: IChatChoice) {
         if (data) {
@@ -1237,8 +1255,10 @@ export class ChatChoice implements IChatChoice {
     init(_data?: any) {
         if (_data) {
             this.index = _data["index"];
-            this.message = _data["message"] ? ChatMessage.fromJS(_data["message"]) : <any>undefined;
+            this.contentFilterResults = _data["contentFilterResults"] ? ChoiceContentFilterResults.fromJS(_data["contentFilterResults"]) : <any>undefined;
             this.finishReason = _data["finishReason"];
+            this.logprobs = _data["logprobs"];
+            this.message = _data["message"] ? ChoiceMessage.fromJS(_data["message"]) : <any>undefined;
         }
     }
 
@@ -1252,116 +1272,404 @@ export class ChatChoice implements IChatChoice {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["index"] = this.index;
-        data["message"] = this.message ? this.message.toJSON() : <any>undefined;
+        data["contentFilterResults"] = this.contentFilterResults ? this.contentFilterResults.toJSON() : <any>undefined;
         data["finishReason"] = this.finishReason;
+        data["logprobs"] = this.logprobs;
+        data["message"] = this.message ? this.message.toJSON() : <any>undefined;
         return data;
     }
 }
 
 export interface IChatChoice {
     index?: number;
-    message?: ChatMessage;
-    finishReason?: string;
+    contentFilterResults?: ChoiceContentFilterResults | undefined;
+    finishReason?: string | undefined;
+    logprobs?: any | undefined;
+    message?: ChoiceMessage;
 }
 
-export class ChatMessage implements IChatMessage {
-    role?: string;
-    content?: string;
+export class ChoiceContentFilterResults implements IChoiceContentFilterResults {
+    hate?: ModerationResult | undefined;
+    selfHarm?: ModerationResult | undefined;
+    sexual?: ModerationResult | undefined;
+    violence?: ModerationResult | undefined;
+    protectedMaterialText?: ProtectedMaterialFilterResult | undefined;
+    protectedMaterialCode?: ProtectedMaterialFilterResult | undefined;
 
-    constructor(data?: IChatMessage) {
+    constructor(data?: IChoiceContentFilterResults) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
                     (<any>this)[property] = (<any>data)[property];
             }
         }
-        if (!data) {
-            this.role = "user";
-            this.content = "Tell me how amazing I am.";
-        }
     }
 
     init(_data?: any) {
         if (_data) {
-            this.role = _data["role"] !== undefined ? _data["role"] : "user";
-            this.content = _data["content"] !== undefined ? _data["content"] : "Tell me how amazing I am.";
+            this.hate = _data["hate"] ? ModerationResult.fromJS(_data["hate"]) : <any>undefined;
+            this.selfHarm = _data["selfHarm"] ? ModerationResult.fromJS(_data["selfHarm"]) : <any>undefined;
+            this.sexual = _data["sexual"] ? ModerationResult.fromJS(_data["sexual"]) : <any>undefined;
+            this.violence = _data["violence"] ? ModerationResult.fromJS(_data["violence"]) : <any>undefined;
+            this.protectedMaterialText = _data["protectedMaterialText"] ? ProtectedMaterialFilterResult.fromJS(_data["protectedMaterialText"]) : <any>undefined;
+            this.protectedMaterialCode = _data["protectedMaterialCode"] ? ProtectedMaterialFilterResult.fromJS(_data["protectedMaterialCode"]) : <any>undefined;
         }
     }
 
-    static fromJS(data: any): ChatMessage {
+    static fromJS(data: any): ChoiceContentFilterResults {
         data = typeof data === 'object' ? data : {};
-        let result = new ChatMessage();
+        let result = new ChoiceContentFilterResults();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["role"] = this.role;
+        data["hate"] = this.hate ? this.hate.toJSON() : <any>undefined;
+        data["selfHarm"] = this.selfHarm ? this.selfHarm.toJSON() : <any>undefined;
+        data["sexual"] = this.sexual ? this.sexual.toJSON() : <any>undefined;
+        data["violence"] = this.violence ? this.violence.toJSON() : <any>undefined;
+        data["protectedMaterialText"] = this.protectedMaterialText ? this.protectedMaterialText.toJSON() : <any>undefined;
+        data["protectedMaterialCode"] = this.protectedMaterialCode ? this.protectedMaterialCode.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IChoiceContentFilterResults {
+    hate?: ModerationResult | undefined;
+    selfHarm?: ModerationResult | undefined;
+    sexual?: ModerationResult | undefined;
+    violence?: ModerationResult | undefined;
+    protectedMaterialText?: ProtectedMaterialFilterResult | undefined;
+    protectedMaterialCode?: ProtectedMaterialFilterResult | undefined;
+}
+
+export class ModerationResult implements IModerationResult {
+    filtered?: boolean;
+    severity?: string;
+
+    constructor(data?: IModerationResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.filtered = _data["filtered"];
+            this.severity = _data["severity"];
+        }
+    }
+
+    static fromJS(data: any): ModerationResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ModerationResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["filtered"] = this.filtered;
+        data["severity"] = this.severity;
+        return data;
+    }
+}
+
+export interface IModerationResult {
+    filtered?: boolean;
+    severity?: string;
+}
+
+export class ProtectedMaterialFilterResult implements IProtectedMaterialFilterResult {
+    filtered?: boolean;
+    detected?: boolean;
+
+    constructor(data?: IProtectedMaterialFilterResult) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.filtered = _data["filtered"];
+            this.detected = _data["detected"];
+        }
+    }
+
+    static fromJS(data: any): ProtectedMaterialFilterResult {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProtectedMaterialFilterResult();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["filtered"] = this.filtered;
+        data["detected"] = this.detected;
+        return data;
+    }
+}
+
+export interface IProtectedMaterialFilterResult {
+    filtered?: boolean;
+    detected?: boolean;
+}
+
+export class ChoiceMessage implements IChoiceMessage {
+    annotations?: any[] | undefined;
+    content?: string;
+    refusal?: any | undefined;
+    role?: string;
+
+    constructor(data?: IChoiceMessage) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["annotations"])) {
+                this.annotations = [] as any;
+                for (let item of _data["annotations"])
+                    this.annotations!.push(item);
+            }
+            this.content = _data["content"];
+            this.refusal = _data["refusal"];
+            this.role = _data["role"];
+        }
+    }
+
+    static fromJS(data: any): ChoiceMessage {
+        data = typeof data === 'object' ? data : {};
+        let result = new ChoiceMessage();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.annotations)) {
+            data["annotations"] = [];
+            for (let item of this.annotations)
+                data["annotations"].push(item);
+        }
         data["content"] = this.content;
+        data["refusal"] = this.refusal;
+        data["role"] = this.role;
         return data;
     }
 }
 
-export interface IChatMessage {
-    role?: string;
+export interface IChoiceMessage {
+    annotations?: any[] | undefined;
     content?: string;
+    refusal?: any | undefined;
+    role?: string;
 }
 
-export class ChatCompletionsRequest implements IChatCompletionsRequest {
-    messages?: ChatMessage[];
-    temperature?: number | undefined;
-    maxTokens?: number | undefined;
+export class PromptFilterResult implements IPromptFilterResult {
+    promptIndex?: number;
+    contentFilterResults?: { [key: string]: any; } | undefined;
 
-    constructor(data?: IChatCompletionsRequest) {
+    constructor(data?: IPromptFilterResult) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
                     (<any>this)[property] = (<any>data)[property];
             }
         }
-        if (!data) {
-            this.temperature = 0.7;
-            this.maxTokens = 1024;
-        }
     }
 
     init(_data?: any) {
         if (_data) {
-            if (Array.isArray(_data["messages"])) {
-                this.messages = [] as any;
-                for (let item of _data["messages"])
-                    this.messages!.push(ChatMessage.fromJS(item));
+            this.promptIndex = _data["promptIndex"];
+            if (_data["contentFilterResults"]) {
+                this.contentFilterResults = {} as any;
+                for (let key in _data["contentFilterResults"]) {
+                    if (_data["contentFilterResults"].hasOwnProperty(key))
+                        (<any>this.contentFilterResults)![key] = _data["contentFilterResults"][key];
+                }
             }
-            this.temperature = _data["temperature"] !== undefined ? _data["temperature"] : 0.7;
-            this.maxTokens = _data["maxTokens"] !== undefined ? _data["maxTokens"] : 1024;
         }
     }
 
-    static fromJS(data: any): ChatCompletionsRequest {
+    static fromJS(data: any): PromptFilterResult {
         data = typeof data === 'object' ? data : {};
-        let result = new ChatCompletionsRequest();
+        let result = new PromptFilterResult();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.messages)) {
-            data["messages"] = [];
-            for (let item of this.messages)
-                data["messages"].push(item.toJSON());
+        data["promptIndex"] = this.promptIndex;
+        if (this.contentFilterResults) {
+            data["contentFilterResults"] = {};
+            for (let key in this.contentFilterResults) {
+                if (this.contentFilterResults.hasOwnProperty(key))
+                    (<any>data["contentFilterResults"])[key] = (<any>this.contentFilterResults)[key];
+            }
         }
-        data["temperature"] = this.temperature;
-        data["maxTokens"] = this.maxTokens;
         return data;
     }
 }
 
-export interface IChatCompletionsRequest {
-    messages?: ChatMessage[];
-    temperature?: number | undefined;
-    maxTokens?: number | undefined;
+export interface IPromptFilterResult {
+    promptIndex?: number;
+    contentFilterResults?: { [key: string]: any; } | undefined;
+}
+
+export class UsageInfo implements IUsageInfo {
+    completionTokens?: number;
+    promptTokens?: number;
+    totalTokens?: number;
+    completionTokensDetails?: CompletionTokensDetails | undefined;
+    promptTokensDetails?: PromptTokensDetails | undefined;
+
+    constructor(data?: IUsageInfo) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.completionTokens = _data["completionTokens"];
+            this.promptTokens = _data["promptTokens"];
+            this.totalTokens = _data["totalTokens"];
+            this.completionTokensDetails = _data["completionTokensDetails"] ? CompletionTokensDetails.fromJS(_data["completionTokensDetails"]) : <any>undefined;
+            this.promptTokensDetails = _data["promptTokensDetails"] ? PromptTokensDetails.fromJS(_data["promptTokensDetails"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): UsageInfo {
+        data = typeof data === 'object' ? data : {};
+        let result = new UsageInfo();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["completionTokens"] = this.completionTokens;
+        data["promptTokens"] = this.promptTokens;
+        data["totalTokens"] = this.totalTokens;
+        data["completionTokensDetails"] = this.completionTokensDetails ? this.completionTokensDetails.toJSON() : <any>undefined;
+        data["promptTokensDetails"] = this.promptTokensDetails ? this.promptTokensDetails.toJSON() : <any>undefined;
+        return data;
+    }
+}
+
+export interface IUsageInfo {
+    completionTokens?: number;
+    promptTokens?: number;
+    totalTokens?: number;
+    completionTokensDetails?: CompletionTokensDetails | undefined;
+    promptTokensDetails?: PromptTokensDetails | undefined;
+}
+
+export class CompletionTokensDetails implements ICompletionTokensDetails {
+    acceptedPredictionTokens?: number;
+    audioTokens?: number;
+    reasoningTokens?: number;
+    rejectedPredictionTokens?: number;
+
+    constructor(data?: ICompletionTokensDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.acceptedPredictionTokens = _data["acceptedPredictionTokens"];
+            this.audioTokens = _data["audioTokens"];
+            this.reasoningTokens = _data["reasoningTokens"];
+            this.rejectedPredictionTokens = _data["rejectedPredictionTokens"];
+        }
+    }
+
+    static fromJS(data: any): CompletionTokensDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new CompletionTokensDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["acceptedPredictionTokens"] = this.acceptedPredictionTokens;
+        data["audioTokens"] = this.audioTokens;
+        data["reasoningTokens"] = this.reasoningTokens;
+        data["rejectedPredictionTokens"] = this.rejectedPredictionTokens;
+        return data;
+    }
+}
+
+export interface ICompletionTokensDetails {
+    acceptedPredictionTokens?: number;
+    audioTokens?: number;
+    reasoningTokens?: number;
+    rejectedPredictionTokens?: number;
+}
+
+export class PromptTokensDetails implements IPromptTokensDetails {
+    audioTokens?: number;
+    cachedTokens?: number;
+
+    constructor(data?: IPromptTokensDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.audioTokens = _data["audioTokens"];
+            this.cachedTokens = _data["cachedTokens"];
+        }
+    }
+
+    static fromJS(data: any): PromptTokensDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new PromptTokensDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["audioTokens"] = this.audioTokens;
+        data["cachedTokens"] = this.cachedTokens;
+        return data;
+    }
+}
+
+export interface IPromptTokensDetails {
+    audioTokens?: number;
+    cachedTokens?: number;
 }
 
 export class SwaggerException extends Error {
