@@ -43,7 +43,9 @@ public class CodexProxy : ControllerBase
         [FromBody] System.Text.Json.JsonElement rawPayload,
         CancellationToken cancellationToken)
     {
-        // Optionally add your API version checks here if required, outside the refactor scope
+        _logger.LogInformation("ChatCompletions endpoint called with deploymentId: {DeploymentId}", deploymentId);
+        _logger.LogInformation("Raw payload: {RawPayload}", rawPayload);
+        _logger.LogInformation("API key: {ApiKey}", apiKey);
         if (string.IsNullOrEmpty(apiKey))
         {
             _logger.LogWarning("Missing API key");

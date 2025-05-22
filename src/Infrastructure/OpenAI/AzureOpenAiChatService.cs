@@ -34,8 +34,8 @@ public class AzureOpenAiChatService : IChatService
         var endpoint = $"{_endpoint.TrimEnd('/')}/deployments/{deploymentId}/chat/completions?api-version={_apiVersion}";
         var content = new StringContent(rawPayload, Encoding.UTF8, "application/json");
 
-        //_logger.LogInformation("[AzureOpenAiChatService] Outbound endpoint: {Endpoint}", endpoint);
-        //_logger.LogInformation("[AzureOpenAiChatService] Outbound payload: {Payload}", rawPayload);
+        _logger.LogInformation("[AzureOpenAiChatService] Outbound endpoint: {Endpoint}", endpoint);
+        _logger.LogInformation("[AzureOpenAiChatService] Outbound payload: {Payload}", rawPayload);
 
         // Ensure proper headers
         _httpClient.DefaultRequestHeaders.Remove("api-key");
@@ -46,7 +46,7 @@ public class AzureOpenAiChatService : IChatService
         _httpClient.DefaultRequestHeaders.Add("x-ms-model-mesh-model-name", deploymentId);
 
         var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-        //_logger.LogInformation("[AzureOpenAiChatService] Received status: {StatusCode}", response.StatusCode);
+        _logger.LogInformation("[AzureOpenAiChatService] Received status: {StatusCode}", response.StatusCode);
 
         string responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)

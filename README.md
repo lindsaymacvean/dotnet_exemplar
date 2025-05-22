@@ -127,3 +127,87 @@ Before deploying to production, make sure to:
 
 2. Set up mssql database and azure secrets
 3. Reset admin password
+
+## Configure codex: Using This Project as a Proxy for Codex CLI
+
+These instructions show how to run this .NET project as an OpenAI-compatible proxy for the [Codex CLI](https://github.com/openai/codex).
+
+### 1. Install Codex CLI
+
+Install globally from npm:
+```bash
+npm i -g @openai/codex
+```
+See [Codex CLI GitHub](https://github.com/openai/codex) for more details.
+
+### 2. Set up the proxy and secrets
+
+- Ensure your database is running and has at least one *client API key* present in the appropriate table (for authentication by Codex; see AGENTS.md for key distinction)
+- Configure the *service API key* (used by the backend to call Azure OpenAI) as a secret, e.g.:
+    - For local dev: use .NET [User Secrets](#🔐-local-development-–-azure-api-key-setup) or environment variables
+- Ensure the proxy is configured with your database and Azure settings (see steps above)
+
+### 3. Run the proxy
+
+Start the .NET web project:
+```bash
+dotnet watch --project src/Web run
+# or
+dotnet run --project src/Web
+```
+By default, it will be available at https://localhost:5001/openai
+
+### 4. Configure your environment for Codex CLI
+
+Add these lines to your `.zshrc`, `.bashrc`, or shell before using Codex:
+```bash
+export OPENAI_API_KEY="f6e4d7fe-8e76-4d8c-bf76-23c7fad51eab"            # client API key from your DB
+export AZURE_OPENAI_API_KEY="f6e4d7fe-8e76-4d8c-bf76-23c7fad51eab"      # must MATCH the OPENAI_API_KEY (Codex expects both)
+export AZURE_OPENAI_API_VERSION="2025-01-01-preview"                     # set as required
+```
+
+### 5. Add Codex config
+
+Create `~/codex/config.json` (or edit as needed):
+```json
+{
+  "model": "gpt-4.1",
+  "provider": "azure",
+  "notify": true,
+  "approvalMode": "full-auto",
+  "providers": {
+    "openai": {
+      "name": "OpenAI",
+      "baseURL": "https://api.openai.com/v1",
+      "envKey": "OPENAI_API_KEY"
+    },
+    "azure": {
+      "name": "AzureOpenAI",
+      "baseURL": "https://localhost:5001/openai",
+      "envKey": "AZURE_OPENAI_API_KEY"
+    }
+  },
+  "history": {
+    "maxSize": 1000,
+    "saveHistory": true,
+    "sensitivePatterns": []
+  }
+}
+```
+
+> **Note:** The `baseURL` for Azure must match your local/prod .NET proxy, e.g. `https://localhost:5001/openai`. The API key **must** be valid in your DB.
+
+### 6. Run Codex using your proxy
+
+Start Codex CLI targeting the Azure (proxy) provider:
+```bash
+# If running locally with self-signed TLS, you may need:
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+
+codex --notify --provider azure
+```
+
+---
+
+## Known Issues
+There is a known issue with the `tools` parameter and some endpoint compatibility: this could be a limitation or breaking change in Azure OpenAI's API vs OpenAI, not of this proxy implementation. See debugging output for more info, however after switching back to azure directly there wasn't a problem so further investigation needed. 
