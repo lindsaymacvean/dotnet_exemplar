@@ -1,20 +1,53 @@
 ﻿# .NET Clean Architecture Exemplar
 
-## 🎯 Project Purpose
+🧭 Why This Proxy Exists — Enterprise Use Case
 
-This boilerplate project demonstrates a clean architecture .NET application built for CV and code review purposes. It is designed to showcase technical competency in modern C#/.NET development, including layering, dependency injection, testing, CQRS, and integration with external services like AI APIs.
+In large enterprises, the adoption of generative AI services such as Azure OpenAI must align with strict data governance, security, and cost control requirements. This proof-of-concept demonstrates a secure, scalable pattern for using Azure-hosted large language models (LLMs) without sacrificing enterprise control or compliance.
 
-The user (acting as a technical architect) will also use this project to validate code review capabilities internally in a corporate environment with restricted infrastructure. A secondary track will involve building a code review assistant using Azure Cognitive Services, potentially integrating with this project in the future.
+🎯 Problem Context
+	1.	Data Sovereignty and Compliance
+Enterprises often cannot allow sensitive data to flow to external third-party providers such as OpenAI directly due to data residency, GDPR, or internal policy constraints.
+However, hosting the same models on Azure within the organization’s own cloud estate (i.e., Azure OpenAI in-region) resolves the data sovereignty concern.
+	2.	Need for Centralized Access Control
+If every developer were to provision their own instance of Azure OpenAI or obtain direct credentials, this would lead to:
+	•	Uncontrolled costs
+	•	Security risks from unmanaged API keys
+	•	Audit and governance challenges
+	3.	Solution: API Proxy With Internal Developer Tokens
+This proxy acts like a NAT-style gateway:
+	•	Developers authenticate using a personal enterprise-issued token
+	•	The proxy validates this token internally (against a secure database)
+	•	Then it exchanges that internal token for a single, centrally managed Azure OpenAI API key
+	•	It forwards the request to the shared Azure model, acting on the developer’s behalf
 
-## 🧱 Development Plan Overview
+⸻
 
-1. Scaffold project with clean architecture layers e.g. jason taylor template
-2. Connect to MSSQL using EF Core and LINQ; implement migrations
-3. Add DI setup and service registration
-4. Implement Redis-backed session and authentication
-5. Write xUnit-based tests for application layer logic
-6. Implement CQRS via MediatR
-7. Interface with a third-party service (e.g., AI analysis API)
+🧩 Benefits of the Proxy Pattern
+
+Once this proxy is in place, it becomes a middleware layer with strategic capabilities:
+	•	🔐 Access Control
+Enforce who is allowed to use the LLMs, and revoke access per user or token without rotating the main API key.
+	•	📜 Prompt and Completion Logging
+Log and audit user prompts and model responses for observability, incident review, or compliance.
+	•	🧠 RAG (Retrieval-Augmented Generation)
+Inject contextual enterprise data from internal sources into prompts — without developers needing to implement RAG logic themselves.
+	•	🛡️ Guardrails & Filtering
+Add safety layers like profanity filters, data redaction, or custom validation checks before the prompt hits the model.
+	•	🔄 Model Switching and Routing
+Dynamically route traffic to different versions of the model (e.g., GPT-4 vs GPT-3.5), or fallback to an offline model in case of outages.
+
+⸻
+
+🛠️ Summary
+
+This proxy design decouples developer access from raw model credentials, aligns with enterprise-grade governance, and provides a foundation for scalable, auditable, and customizable AI integration.
+
+It’s not just a pass-through — it’s an enterprise control point for how LLMs are accessed and governed.
+
+## Roadmap
+* Create a web based admin interface to create/revoke developer tokens
+* Implement Redis-backed session and authentication
+* Write xUnit-based tests for application layer logic
 
 ## 🛠️ Development Setup
 
