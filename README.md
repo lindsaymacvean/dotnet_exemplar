@@ -8,11 +8,13 @@ In large enterprises, the adoption of generative AI services such as Azure OpenA
   1. Data Sovereignty and Compliance 
 Enterprises often cannot allow sensitive data to flow to external third-party providers such as OpenAI directly due to data residency, GDPR, or internal policy constraints.
 However, hosting the same models on Azure within the organization's own cloud estate (i.e., Azure OpenAI in-region) resolves the data sovereignty concern. 
+ 
   2. Need for Centralized Access Control 
 If every developer were to provision their own instance of Azure OpenAI or obtain direct credentials, this would lead to: 
   * Uncontrolled costs
-  * Security risks from unmanaged API keys 
-	* Audit and governance challenges 
+  * Security risks from unmanaged API keys
+  * Audit and governance challenges 
+ 
   3. Solution: API Proxy With Internal Developer Tokens 
 This proxy acts like a NAT-style gateway: 
   * Developers authenticate using a personal enterprise-issued token 
